@@ -50,3 +50,13 @@ def sigmoid(x):
     x = np.atleast_1d(x)
     return 1/(1+np.exp(-x))
 
+
+def tanh(x):
+    """
+    Hyperbolic Tangent Function.
+
+    :param x: input vector
+    :return: output of tanh(x)
+    """
+    x = np.atleast_1d(x)
+    return np.tanh(x)

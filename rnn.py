@@ -22,7 +22,7 @@ class ContinuousRecurrentNetwork:
         self.__init_solver__()
         
         self.activation_function = None
-        self.activation_mode = kwargs.get('activation', 'Relu')
+        self.activation_mode = kwargs.get('activation', None)
         self.__init_activation_function__()
         
         if kwargs.get('randomize weights', True):
@@ -67,18 +67,22 @@ class ContinuousRecurrentNetwork:
         return update
 
     def __init_activation_function__(self):
-        if self.activation_mode is 'Relu':
+        activation_mode = self.activation_mode.lower()
+        if activation_mode is 'relu' or activation_mode is 'rectified linear unit':
             from activation_functions import relu
             self.activation_function = relu
-        elif self.activation_mode is 'Sigmoid':
+        elif activation_mode is 'sigmoid':
             from activation_functions import sigmoid
             self.activation_function = sigmoid
-        elif self.activation_mode is 'Softplus':
+        elif activation_mode is 'softplus':
             from activation_functions import softplus
             self.activation_function = softplus
-        elif self.activation_mode is 'Linear':
+        elif activation_mode is 'linear' or activation_mode is None:
             from activation_functions import linear
             self.activation_function = linear
+        elif activation_mode is 'tanh' or activation_mode is 'hyperbolic tangent':
+            from activation_functions import tanh
+            self.activation_function = tanh
         else:
             raise ValueError('Invalid Activation Function: ' + str(self.activation_mode))
 
