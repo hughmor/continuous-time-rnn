@@ -1,8 +1,16 @@
+"""
+
+    Author: Hugh Morison 
+    
+    This file contains functions for various numerical integration methods.
+    All functions have the signature (f, y0, dt, t) and return the value of y(t+dt) given a function f=dy/dt, an initial value y0=y(t).
+
+"""
 import math
 import numpy as np
 
 
-def euler_step(f, y0, dt, t=0, **kwargs):
+def euler_step(f, y0, dt, t=0):
     """
     Custom Euler method with other inputs.
 
