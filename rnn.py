@@ -2,7 +2,7 @@ import numpy as np
 from collections import deque
 
 
-class ContinuousRecurrentNetwork:
+class CTRNN:
 
     def __init__(self, *args, **kwargs):
         self.size = kwargs.get('number of neurons', 1)
