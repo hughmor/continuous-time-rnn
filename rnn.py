@@ -25,7 +25,7 @@ class CTRNN:
             self.input_weights = kwargs.get('input weights', np.ones(shape=(self.n_in, self.n_in)))
 
         # Simulator time
-        self.t = 0.0
+        self.t_seconds = 0.0
         self.dt_solver = kwargs.get('time step', 1.0e-6)
 
         # Integration
@@ -53,7 +53,7 @@ class CTRNN:
         self.output_sequence = np.zeros(shape=(self.n_out, self.input_sequence.shape[1]))
         self.take_from_delay_line = False
         for i in range(self.input_sequence.shape[1]):
-            if not self.take_from_delay_line and self.t >= self.delay_time:
+            if not self.take_from_delay_line and self.t_seconds >= self.delay_time:
                 self.take_from_delay_line = True
             self.step()
             self.output_sequence[:,i] = self.state_vector[-self.n_out:]
@@ -61,13 +61,13 @@ class CTRNN:
     def step(self):
         self.delay_line.append(self.activation_function(self.state_vector + self.bias_vector))
         self.neuron_inputs = self.calc_in_vector()
-        self.state_vector = self.step_solver(self.ds_dt, self.state_vector, self.dt_solver, t=self.t)
-        self.t += self.dt_solver
+        self.state_vector = self.step_solver(self.ds_dt, self.state_vector, self.dt_solver, t=self.t_seconds)
+        self.t_seconds += self.dt_solver
         
     def calc_in_vector(self):
         neuron_in = np.dot(self.weight_matrix, self.delay_line.popleft()) if self.take_from_delay_line else np.zeros_like(self.state_vector)
         if self.input_sequence is not None:
-            i = int(self.t/self.dt_solver)-1
+            i = int(self.t_seconds/self.dt_solver)-1
             inp = np.dot(self.input_weights, self.input_sequence[:,i])
             neuron_in[:len(inp)] += inp
         return neuron_in
