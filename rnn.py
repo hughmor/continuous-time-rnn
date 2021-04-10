@@ -39,10 +39,14 @@ class CTRNN:
         self._init_activation_function()
 
         # Delay line
-        self.delay_line = deque()
+        self.delay_line = deque() # TODO: I'm not sure I like this implementation... probably will gut this (is this even working right now?)
         self.delay_time = kwargs.get('delay iterations', 2) * self.dt_solver
 
         self._enforce_parameter_constraints()
+
+    def reset(self):
+        self.values = np.zeros_like(self.state_vector)
+        self.t_seconds = 0.0
 
     def forward(self, x):
         x = np.array(x)
