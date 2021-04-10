@@ -3,34 +3,46 @@ from collections import deque
 
 
 class CTRNN:
-
-    def __init__(self, *args, **kwargs):
+    """
+        Simulator for a continuous-time recurrent neural network (CTRNN). This class contains the parameters of the network and simulation,
+        and has functionality to perform numerical integration of the network's differential equation.
+    """
+    def __init__(self, **kwargs):
+        # Neuron states
         self.size = kwargs.get('number of neurons', 1)
-        self.state_vector = kwargs.get('initial state', np.zeros(shape=self.size))
-        self.delay_line = deque()
-        self.biases = kwargs.get('biases', np.zeros(shape=self.size))
         self.n_in = kwargs.get('number of inputs', 1)
         self.n_out = kwargs.get('number of outputs', 1)
-        assert self.n_in + self.n_out <= 2*self.size
+        self.state_vector = kwargs.get('initial state', np.zeros(shape=self.size))
+        self.bias_vector = kwargs.get('biases', np.zeros(shape=self.size))
         
-        self.integration_mode = kwargs.get('integration mode', 'RK4')
-        self.t = 0.0
-        self.dt_solver = kwargs.get('time step', 1.0e-6)
-        self.delay_time = kwargs.get('delay iterations', 2) * self.dt_solver
-        self.tau = kwargs.get('decay constant', 1.0e-3)
-        self.solver_step = None
-        self._init_solver()
-        
-        self.activation_function = None
-        self.activation_mode = kwargs.get('activation', None)
-        self._init_activation_function()
-        
-        if kwargs.get('randomize weights', True):
+        # Network parameters
+        self.decay_constant = kwargs.get('decay constant', 1.0e-3) #TODO: Allow for array of taus (one for each neuron)
+        if kwargs.get('randomize weights', True): #TODO: Allow for matrices to be provided
             self.weight_matrix = np.random.random(size=(self.size, self.size))
             self.input_weights = np.random.random(size=(self.n_in, self.n_in))
         else:
             self.weight_matrix = kwargs.get('weight matrix', np.ones(shape=(self.size, self.size)))
             self.input_weights = kwargs.get('input weights', np.ones(shape=(self.n_in, self.n_in)))
+
+        # Simulator time
+        self.t = 0.0
+        self.dt_solver = kwargs.get('time step', 1.0e-6)
+
+        # Integration
+        self.step_solver = None
+        self.integration_mode = kwargs.get('integration mode', 'RK4')
+        self._init_solver()
+        
+        # Activation functions
+        self.activation_function = None
+        self.activation_mode = kwargs.get('activation', None)
+        self._init_activation_function()
+
+        # Delay line
+        self.delay_line = deque()
+        self.delay_time = kwargs.get('delay iterations', 2) * self.dt_solver
+
+        self._enforce_parameter_constraints()
 
     def forward(self, x):
         x = np.array(x)
@@ -47,9 +59,9 @@ class CTRNN:
             self.output_sequence[:,i] = self.state_vector[-self.n_out:]
         
     def step(self):
-        self.delay_line.append(self.activation_function(self.state_vector + self.biases))
+        self.delay_line.append(self.activation_function(self.state_vector + self.bias_vector))
         self.neuron_inputs = self.calc_in_vector()
-        self.state_vector = self.solver_step(self.ds_dt, self.state_vector, self.dt_solver, t=self.t)
+        self.state_vector = self.step_solver(self.ds_dt, self.state_vector, self.dt_solver, t=self.t)
         self.t += self.dt_solver
         
     def calc_in_vector(self):
@@ -61,7 +73,7 @@ class CTRNN:
         return neuron_in
 
     def ds_dt(self, t, s):
-        decay = -s/self.tau
+        decay = -s/self.decay_constant
         weighted_update = self.neuron_inputs
         update = decay + weighted_update
         return update
@@ -89,9 +101,12 @@ class CTRNN:
     def _init_solver(self):
         if self.integration_mode == 'RK4':
             from solvers import runge_kutta_step as rungekutta
-            self.solver_step = rungekutta
+            self.step_solver = rungekutta
         elif self.integration_mode == 'Euler':
             from solvers import euler_step as euler
-            self.solver_step = euler
+            self.step_solver = euler
         else:
             raise ValueError('Invalid Solver: ' + str(self.integration_mode))
+
+    def _enforce_parameter_constraints(self):
+        assert self.n_in + self.n_out <= 2*self.size
