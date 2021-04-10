@@ -68,29 +68,29 @@ class CTRNN:
 
     def __init_activation_function__(self):
         activation_mode = self.activation_mode.lower()
-        if activation_mode is 'relu' or activation_mode is 'rectified linear unit':
+        if activation_mode == 'relu' or activation_mode == 'rectified linear unit':
             from activation_functions import relu
             self.activation_function = relu
-        elif activation_mode is 'sigmoid':
+        elif activation_mode == 'sigmoid':
             from activation_functions import sigmoid
             self.activation_function = sigmoid
-        elif activation_mode is 'softplus':
+        elif activation_mode == 'softplus':
             from activation_functions import softplus
             self.activation_function = softplus
-        elif activation_mode is 'linear' or activation_mode is None:
+        elif activation_mode == 'linear' or activation_mode is None:
             from activation_functions import linear
             self.activation_function = linear
-        elif activation_mode is 'tanh' or activation_mode is 'hyperbolic tangent':
+        elif activation_mode == 'tanh' or activation_mode == 'hyperbolic tangent':
             from activation_functions import tanh
             self.activation_function = tanh
         else:
             raise ValueError('Invalid Activation Function: ' + str(self.activation_mode))
 
     def __init_solver__(self):
-        if self.integration_mode is 'RK4':
+        if self.integration_mode == 'RK4':
             from solvers import runge_kutta_step as rungekutta
             self.solver_step = rungekutta
-        elif self.integration_mode is 'Euler':
+        elif self.integration_mode == 'Euler':
             from solvers import euler_step as euler
             self.solver_step = euler
         else:
