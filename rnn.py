@@ -19,11 +19,11 @@ class CTRNN:
         self.delay_time = kwargs.get('delay iterations', 2) * self.dt_solver
         self.tau = kwargs.get('decay constant', 1.0e-3)
         self.solver_step = None
-        self.__init_solver__()
+        self._init_solver()
         
         self.activation_function = None
         self.activation_mode = kwargs.get('activation', None)
-        self.__init_activation_function__()
+        self._init_activation_function()
         
         if kwargs.get('randomize weights', True):
             self.weight_matrix = np.random.random(size=(self.size, self.size))
@@ -66,7 +66,7 @@ class CTRNN:
         update = decay + weighted_update
         return update
 
-    def __init_activation_function__(self):
+    def _init_activation_function(self):
         activation_mode = self.activation_mode.lower()
         if activation_mode == 'relu' or activation_mode == 'rectified linear unit':
             from activation_functions import relu
@@ -86,7 +86,7 @@ class CTRNN:
         else:
             raise ValueError('Invalid Activation Function: ' + str(self.activation_mode))
 
-    def __init_solver__(self):
+    def _init_solver(self):
         if self.integration_mode == 'RK4':
             from solvers import runge_kutta_step as rungekutta
             self.solver_step = rungekutta
