@@ -48,7 +48,7 @@ class CTRNN:
         self.values = np.zeros_like(self.state_vector)
         self.t_seconds = 0.0
 
-    def forward(self, x):
+    def advance(self, x):
         x = np.array(x)
         assert self.n_in in x.shape, 'Input vector has incorrect shape: ' + str(x.shape)
         if x.shape[1] == self.n_in:
@@ -56,7 +56,7 @@ class CTRNN:
         self.input_sequence = x
         self.output_sequence = np.zeros(shape=(self.n_out, self.input_sequence.shape[1]))
         self.take_from_delay_line = False
-        for i in range(self.input_sequence.shape[1]):
+        for i in range(self.input_sequence.shape[1]): # TODO: right now evaluation time is based on input length... change to time parameter as input
             if not self.take_from_delay_line and self.t_seconds >= self.delay_time:
                 self.take_from_delay_line = True
             self.step()
