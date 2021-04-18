@@ -1,5 +1,4 @@
 import numpy as np
-from collections import deque
 from solvers import IntegrationSolvers
 from activation_functions import ActivationFunctions
 from typing import Union
