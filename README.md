@@ -6,3 +6,43 @@ This is a package for emulating recurrent neural networks using continuous-time 
 The equations are solved as an initial value problem using numerical integration. Available solvers in this package are the Euler method, and 4-th order Runge-Kutta algorithms.
 
 Many common ML activation functions are implemented, and you can also define custom activation functions.
+
+# Example
+A CTRNN instance can be created from a parameter dictionary.
+
+```
+import numpy as np
+from ctrnn import CTRNN
+
+n_in = 24
+params = {
+    'number of neurons': n_in,
+    'number of inputs': 4,
+    'number of outputs': n_in,
+    'decay constant': 0.01,
+    'weight matrix': np.random.random(size=(n_in,n_in)),
+    'input weights': np.array([
+        [1.,0.,0.],
+        [0.,2.,0.],
+        [0.,0.,3.]
+    ])
+    'integration mode': 'RK4',
+    'activation': 'ReLU',
+    'initial state': np.ones(shape=n_in),
+    'biases': np.zeros(shape=n_in),
+}
+
+nn = CTRNN(**params)
+
+sim_time_seconds = 1.0
+N = 100
+freq = 5
+input1 = [np.sin(2. * np.pi * freq * (x/T) ) for x in range(N)]
+input2 = [np.cos(2. * np.pi * freq * (x/T) ) for x in range(N)]
+input3 = [one + two for one,two in zip(input1, input2)]
+inputs = [input1, input2, input3]
+
+dt = sim_time_seconds / N
+nn.simulate(inputs, dt)
+
+```        
