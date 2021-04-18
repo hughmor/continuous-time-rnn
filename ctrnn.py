@@ -41,11 +41,20 @@ class CTRNN:
         # Throw parameter errors
         self._enforce_parameter_constraints()
 
+    @staticmethod
+    def _ds_dt(s, tau, inpt):
+        """Static Definition of the CTRNN equation"""
+        return inpt - s / tau
+
     def ds_dt(self, t, s):
-        decay = -s/self.decay_constant
-        weighted_update = self._neuron_inputs
-        update = decay + weighted_update
-        return update
+        """
+        Evaluates the differential equation decribing the system with state s at time t
+        
+        Parameters:
+            t (float): Evaluation time.
+            s (ndarray): The state of the system.
+        """
+        return self._ds_dt(s, self.decay_constant, self._neuron_inputs)
 
     def reset(self):
         """Resets the state of the network (sets state and time to zeros)"""
