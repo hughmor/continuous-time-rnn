@@ -136,12 +136,12 @@ class CTRNN:
         self.output_sequence = np.zeros(shape=(self.n_out, self.input_sequence.shape[1]))
         
         for i in range(self.input_sequence.shape[1]): # TODO: right now evaluation time is based on input length... change to time parameter as input
-            next_output = self.advance(self.input_sequence[:,i], dt, dt)
+            next_output = self.advance(dt, dt, self.input_sequence[:,i])
             self.output_sequence[:,i] = next_output[-self.n_out:]
         
         return self.output_sequence
 
-    def advance(self, inputs:Union[float, list, np.ndarray], evolution_time:float, dt:float) -> np.ndarray:
+    def advance(self, evolution_time:float, dt:float, inputs:Union[float, list, np.ndarray] = []) -> np.ndarray:
         """
         Advance the simulation by a given amount of time with a constant input over this time (weight inputs, integrate system of equations, and apply activation function).
 
