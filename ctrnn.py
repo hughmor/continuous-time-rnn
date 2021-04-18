@@ -8,14 +8,10 @@ class CTRNN:
     and has functionality to perform numerical integration of the network's differential equation.
     """
     def __init__(self, **kwargs):
-        # Neuron states
+        # Network parameters
         self.size = kwargs.get('number of neurons', 1)
         self.n_in = kwargs.get('number of inputs', 1)
         self.n_out = kwargs.get('number of outputs', 1)
-        self.state_vector = kwargs.get('initial state', np.zeros(shape=self.size))
-        self.bias_vector = kwargs.get('biases', np.zeros(shape=self.size))
-        
-        # Network parameters
         self.decay_constant = kwargs.get('decay constant', 1.0e-3) #TODO: Allow for array of taus (one for each neuron)
         if kwargs.get('randomize weights', True): #TODO: Allow for matrices to be provided
             self.weight_matrix = np.random.random(size=(self.size, self.size))
@@ -26,7 +22,7 @@ class CTRNN:
 
         # Simulator time
         self.t_seconds = 0.0
-        self.dt_solver = kwargs.get('time step', 1.0e-6)
+        self.dt_solver = kwargs.get('time step', 1.0e-6) #TODO: is this needed anymore?
 
         # Integration
         self._step_solver = None
@@ -37,6 +33,11 @@ class CTRNN:
         self.activation_function = None
         self.activation_mode = kwargs.get('activation', None)
         self._init_activation_function()
+
+        # Initialize vectors
+        self.neuron_vector = kwargs.get('initial state', np.zeros(shape=self.size))
+        self.bias_vector = kwargs.get('biases', np.zeros(shape=self.size))
+        self.state_vector = self.activation_function(self.neuron_vector + self.bias_vector)
 
         # Throw parameter errors
         self._enforce_parameter_constraints()
@@ -58,34 +59,45 @@ class CTRNN:
 
     def reset(self):
         """Resets the state of the network (sets state and time to zeros)"""
-        self.values = np.zeros_like(self.state_vector)
+        self.state_vector = np.zeros_like(self.state_vector)
         self.t_seconds = 0.0
 
-    def advance(self, x):
-        x = np.array(x)
-        assert self.n_in in x.shape, 'Input vector has incorrect shape: ' + str(x.shape)
-        if x.shape[1] == self.n_in:
-            x = x.transpose()
-        self.input_sequence = x
+    def simulate(self, x, dt):
+        """
+        Run the simulation over a given input vector with defined timestep between input samples
+
+        Parameters:
+            x (list): 2d input array with shape (number of inputs, number of samples)
+            dt (float): timestep between each sample in seconds
+        """
+        self.reset()
+
+        self.input_sequence = np.array(x)
         self.output_sequence = np.zeros(shape=(self.n_out, self.input_sequence.shape[1]))
+        
         for i in range(self.input_sequence.shape[1]): # TODO: right now evaluation time is based on input length... change to time parameter as input
-            self.step()
-            self.output_sequence[:,i] = self.state_vector[-self.n_out:]
+            next_output = self.advance(self.input_sequence[:,i], self.dt_solver, self.dt_solver)
+            self.output_sequence[:,i] = next_output[-self.n_out:]
         
-    def step(self):
-        """Take a single step of the simulator (get inputs and weight, integrate system of equations, and apply activation function)"""
-        self._neuron_inputs = self._get_in_vector() # Input comes from recurrent units plus the external input
-        self.state_vector = self._step_solver(self.ds_dt, self.state_vector, self.dt_solver, t=self.t_seconds) # Integrate system with chosen IVP solver
-        self.state_vector = self.activation_function(self.state_vector + self.bias_vector) # Apply activation function (offset by bias)
-        self.t_seconds += self.dt_solver
-        
-    def _get_in_vector(self):
-        neuron_in = np.dot(self.weight_matrix, self.state_vector)
-        if self.input_sequence is not None:
-            i = int(self.t_seconds/self.dt_solver)-1
-            inp = np.dot(self.input_weights, self.input_sequence[:,i])
-            neuron_in[:len(inp)] += inp
-        return neuron_in
+        return self.output_sequence
+
+    def advance(self, inputs, evolution_time, dt):
+        """
+        Advance the simulation by a given amount of time with a constant input over this time (weight inputs, integrate system of equations, and apply activation function)
+        """
+        end_time = self.t_seconds + evolution_time
+        n_in = len(inputs)
+        if self.n_in != n_in:
+            raise RuntimeError(f"Expected input vecor of length {self.n_in}, got {n_in}")
+
+        while self.t_seconds < end_time:
+            dt = min(dt, end_time - self.t_seconds)
+            self._neuron_inputs = np.dot(self.weight_matrix, self.state_vector) # Recurrent connections from previous state
+            self._neuron_inputs[:n_in] += np.dot(self.input_weights, np.atleast_1d(inputs)) # Input connections (non-recurrent)
+            self.neuron_vector = self._step_solver(self.ds_dt, self.neuron_vector, dt, t=self.t_seconds) # Integrate system with chosen IVP solver
+            self.state_vector = self.activation_function(self.neuron_vector + self.bias_vector) # Apply activation function (offset by bias)
+            self.t_seconds += dt
+        return self.state_vector
 
     def _init_activation_function(self):
         activation_mode = self.activation_mode.lower()
