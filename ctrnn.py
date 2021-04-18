@@ -169,7 +169,14 @@ class CTRNN:
     def _init_solver(self):
         self._step_solver = IntegrationSolvers.get(self._int_mode)
 
-    def _enforce_parameter_constraints(self):
-        assert self.n_in >= 0, 'Number of inputs must be 0 or greater'
-        assert self.n_out >= 0, 'Number of outputs must be 0 or greater'
-        assert self.n_in + self.n_out <= 2*self.size
+    def _enforce_parameter_constraints(self): #TODO: asserts should probably be RuntimeError or ValueError ?
+        # Basic network params
+        assert 0 <= self.n_in <= self.size, f'Number of inputs must be between 0 and {self.size}, got {self.n_in}.'
+        assert 0 <= self.n_out <= self.size, f'Number of outputs must be between 0 and {self.size}, got {self.n_out}.'
+
+        # Array sizes
+        assert self.neuron_vector.shape[0] == self.size, f'State vector is shape {self.neuron_vector.shape} for network size {self.size}'
+        assert self.bias_vector.shape[0] == self.size, f'Bias vector is shape {self.bias_vector.shape} for network size {self.size}'
+        assert self.weight_matrix.shape == (self.size, self.size), f'Weight matrix is shape {self.weight_matrix.shape} for network size {self.size}'
+        assert self.input_weights.shape == (self.n_in, self.n_in), f'Input weight matrix is shape {self.input_weights.shape} for network size {self.size} with {self.n_in} inputs.'
+        
