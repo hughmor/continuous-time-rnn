@@ -2,6 +2,7 @@ import numpy as np
 from collections import deque
 from solvers import IntegrationSolvers
 from activation_functions import ActivationFunctions
+from typing import Union
 
 class CTRNN:
     """
@@ -25,12 +26,10 @@ class CTRNN:
         self.t_seconds = 0.0
         self._step_solver = None
         self.set_integration_mode(kwargs.get('integration mode', 'RK4'))
-        self._init_solver()
         
         # Activation functions
         self.activation_function = None
         self.set_activation_mode(kwargs.get('activation', 'linear'))
-        self._init_activation_function()
 
         # Initialize vectors
         self.neuron_vector = kwargs.get('initial state', np.zeros(shape=self.size))
@@ -42,58 +41,70 @@ class CTRNN:
 
     @property
     def integration_mode(self):
+        """Return the name of the currently activated numerical solver."""
         return self._int_mode
 
-    def set_integration_mode(self, mode):
+    def set_integration_mode(self, mode: str):
         """
         Setter for integration method to use during simulation.
+
+        :param mode: Numerical integrator string
         """
         if mode not in IntegrationSolvers.allowed_modes:
             raise ValueError(f"Invalid integration solver {mode}. Must be one of: {IntegrationSolvers.allowed_modes}")
         self._int_mode = mode
+        self._init_solver()
 
     @property
     def activation_mode(self):
+        """Return the name of the current activation functions of the neurons."""
         return self._act_mode
 
-    def set_activation_mode(self, mode):
+    def set_activation_mode(self, mode: str):
         """
         Setter for activation funtion type to use during evaluation.
+
+        :param mode: Activation function string
         """
         if mode not in ActivationFunctions.allowed_modes:
             raise ValueError(f"Invalid activation function {mode}. Must be one of: {ActivationFunctions.allowed_modes}")
         self._act_mode = mode
+        self._init_activation_function()
 
     @staticmethod
-    def _ds_dt(s, tau, inpt):
-        """Static Definition of the CTRNN equation"""
+    def _ds_dt(s: Union[float, np.ndarray], tau: Union[float, np.ndarray], inpt: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+        """
+        Static Definition of the CTRNN equation. All values can be defined as scalars or as numpy arrays with length equal to the dimensionality of the system.
+        
+        :param s: Current state.
+        :param tau: Decay constant.
+        :param inpt: Input to the system.
+        """
         return inpt - s / tau
 
-    def ds_dt(self, t, s):
+    def ds_dt(self, t: float, s: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         """
-        Evaluates the differential equation decribing the system with state s at time t
+        Evaluates the differential equation decribing the system with state s at time t using the parameters of the CTRNN instance.
+        (This method is here to expose a function of the correct signature to the integration method)
         
-        Parameters:
-            t (float): Evaluation time.
-            s (ndarray): The state of the system.
+        :param t: Evaluation time.
+        :param s: The state of the system.
         """
         return self._ds_dt(s, self.decay_constant, self._neuron_inputs)
 
     def reset(self):
-        """Resets the state of the network (sets state and time to zeros)"""
+        """Resets the state of the network (sets state and time to zeros)."""
         self.state_vector = np.zeros_like(self.state_vector)
         self.t_seconds = 0.0
 
-    def simulate(self, x, dt):
+    def simulate(self, x: Union[list, np.ndarray], dt: float) -> np.ndarray:
         """
-        Run the simulation over a given input vector with defined timestep between input samples
+        Run the simulation over a given input vector with defined timestep between input samples. Returns the output vector over the time spanned by the input vector.
 
-        Parameters:
-            x (list): 2d input array with shape (number of inputs, number of samples)
-            dt (float): timestep between each sample in seconds
+        :param x: 2d input array with shape (number of inputs, number of samples). Can be a numpy array or a list of lists.
+        :param dt: Timestep between each sample in seconds.
         """
         self.reset()
-
         self.input_sequence = np.array(x)
         self.output_sequence = np.zeros(shape=(self.n_out, self.input_sequence.shape[1]))
         
@@ -103,9 +114,13 @@ class CTRNN:
         
         return self.output_sequence
 
-    def advance(self, inputs, evolution_time, dt):
+    def advance(self, inputs: Union[float, list, np.ndarray], evolution_time: float, dt: float) -> np.ndarray:
         """
-        Advance the simulation by a given amount of time with a constant input over this time (weight inputs, integrate system of equations, and apply activation function)
+        Advance the simulation by a given amount of time with a constant input over this time (weight inputs, integrate system of equations, and apply activation function).
+
+        :param inputs: The input of the system over the evolution time. Must be of length equal to the number of input nodes. Can be a scalar when number of inputs is 1.
+        :param evolution_time: The duration for which to advance the simulation (how long the inputs are applied for).
+        :param dt: The timestep for the integration solver.
         """
         end_time = self.t_seconds + evolution_time
         n_in = len(inputs)
@@ -122,10 +137,10 @@ class CTRNN:
         return self.state_vector
 
     def _init_activation_function(self):
-        self.activation_function = ActivationFunctions.get(self.activation_mode)
+        self.activation_function = ActivationFunctions.get(self._act_mode)
 
     def _init_solver(self):
-        self._step_solver = IntegrationSolvers.get(self.integration_mode)
+        self._step_solver = IntegrationSolvers.get(self._int_mode)
 
     def _enforce_parameter_constraints(self):
         assert self.n_in >= 0, 'Number of inputs must be 0 or greater'
