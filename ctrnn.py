@@ -20,11 +20,8 @@ class CTRNN:
             self.weight_matrix = kwargs.get('weight matrix', np.ones(shape=(self.size, self.size)))
             self.input_weights = kwargs.get('input weights', np.ones(shape=(self.n_in, self.n_in)))
 
-        # Simulator time
-        self.t_seconds = 0.0
-        self.dt_solver = kwargs.get('time step', 1.0e-6) #TODO: is this needed anymore?
-
         # Integration
+        self.t_seconds = 0.0
         self._step_solver = None
         self.integration_mode = kwargs.get('integration mode', 'RK4')
         self._init_solver()
@@ -76,7 +73,7 @@ class CTRNN:
         self.output_sequence = np.zeros(shape=(self.n_out, self.input_sequence.shape[1]))
         
         for i in range(self.input_sequence.shape[1]): # TODO: right now evaluation time is based on input length... change to time parameter as input
-            next_output = self.advance(self.input_sequence[:,i], self.dt_solver, self.dt_solver)
+            next_output = self.advance(self.input_sequence[:,i], dt, dt)
             self.output_sequence[:,i] = next_output[-self.n_out:]
         
         return self.output_sequence
