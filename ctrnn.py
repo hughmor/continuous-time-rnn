@@ -4,8 +4,8 @@ from collections import deque
 
 class CTRNN:
     """
-        Simulator for a continuous-time recurrent neural network (CTRNN). This class contains the parameters of the network and simulation,
-        and has functionality to perform numerical integration of the network's differential equation.
+    Simulator for a continuous-time recurrent neural network (CTRNN). This class contains the parameters of the network and simulation,
+    and has functionality to perform numerical integration of the network's differential equation.
     """
     def __init__(self, **kwargs):
         # Neuron states
@@ -41,7 +41,14 @@ class CTRNN:
         # Throw parameter errors
         self._enforce_parameter_constraints()
 
+    def ds_dt(self, t, s):
+        decay = -s/self.decay_constant
+        weighted_update = self._neuron_inputs
+        update = decay + weighted_update
+        return update
+
     def reset(self):
+        """Resets the state of the network (sets state and time to zeros)"""
         self.values = np.zeros_like(self.state_vector)
         self.t_seconds = 0.0
 
@@ -57,6 +64,7 @@ class CTRNN:
             self.output_sequence[:,i] = self.state_vector[-self.n_out:]
         
     def step(self):
+        """Take a single step of the simulator (get inputs and weight, integrate system of equations, and apply activation function)"""
         self._neuron_inputs = self._get_in_vector() # Input comes from recurrent units plus the external input
         self.state_vector = self._step_solver(self.ds_dt, self.state_vector, self.dt_solver, t=self.t_seconds) # Integrate system with chosen IVP solver
         self.state_vector = self.activation_function(self.state_vector + self.bias_vector) # Apply activation function (offset by bias)
@@ -69,12 +77,6 @@ class CTRNN:
             inp = np.dot(self.input_weights, self.input_sequence[:,i])
             neuron_in[:len(inp)] += inp
         return neuron_in
-
-    def ds_dt(self, t, s):
-        decay = -s/self.decay_constant
-        weighted_update = self._neuron_inputs
-        update = decay + weighted_update
-        return update
 
     def _init_activation_function(self):
         activation_mode = self.activation_mode.lower()
