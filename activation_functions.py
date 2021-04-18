@@ -143,3 +143,46 @@ def hat(x):
     x = np.atleast_1d(x)
     return np.maximum(np.zeros_like(x), 1-np.abs(x))
 
+
+class ActivationFunctions:
+    functions = {
+        "linear": linear,
+        "linear unit": linear,
+
+        "relu": relu,
+        "rectified linear unit": relu,
+
+        "elu": elu,
+        "exponential linear unit": elu,
+        
+        "softplus": softplus,
+        "soft plus": softplus,
+
+        "sigmoid": sigmoid,
+
+        "tanh": tanh,
+        "hyperbolic tangent": tanh,
+
+        "sin": sin,
+        "sinusoid": sin,
+        "sinusoidal": sin,
+
+        "clamp": clamp,
+
+        "square": square,
+        "quadratic": square,
+        "x^2": square,
+        "cube": cube,
+        "cubic": cube,
+        "x^3": cube,
+        
+        "abs": absolute,
+        "absolute value": absolute,
+
+        "hat": hat,
+    }
+    allowed_modes = list(functions.keys())
+
+    @classmethod
+    def get(cls, mode):
+        return cls.functions[mode.lower()]

@@ -5,6 +5,8 @@
     This file contains functions for various numerical integration methods.
     All functions have the signature (f, y0, dt, t) and return the value of y(t+dt) given a function f=dy/dt, an initial value y0=y(t).
 
+    TODO: Add different degrees of runge kutta method, other solvers
+
 """
 import math
 import numpy as np
@@ -45,3 +47,16 @@ def runge_kutta_step(f, y0, dt, t=0):
     k4 = np.atleast_1d(f(t + dt, y + k3 * dt))
 
     return y + dt*(1./6.)*(k1+2.*k2+2.*k3+k4)
+
+
+class IntegrationSolvers:
+    solvers = {
+        "rk4": runge_kutta_step,
+        "runge kutta": runge_kutta_step,
+        "euler": euler_step,
+    }
+    allowed_modes = list(solvers.keys())
+
+    @classmethod
+    def get(cls, mode):
+        return cls.solvers[mode.lower()]

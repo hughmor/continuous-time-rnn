@@ -1,6 +1,7 @@
 import numpy as np
 from collections import deque
-
+from solvers import IntegrationSolvers
+from activation_functions import ActivationFunctions
 
 class CTRNN:
     """
@@ -23,12 +24,12 @@ class CTRNN:
         # Integration
         self.t_seconds = 0.0
         self._step_solver = None
-        self._int_mode = kwargs.get('integration mode', 'RK4')
+        self.set_integration_mode(kwargs.get('integration mode', 'RK4'))
         self._init_solver()
         
         # Activation functions
         self.activation_function = None
-        self._act_mode = kwargs.get('activation', None)
+        self.set_activation_mode(kwargs.get('activation', 'linear'))
         self._init_activation_function()
 
         # Initialize vectors
@@ -43,9 +44,25 @@ class CTRNN:
     def integration_mode(self):
         return self._int_mode
 
+    def set_integration_mode(self, mode):
+        """
+        Setter for integration method to use during simulation.
+        """
+        if mode not in IntegrationSolvers.allowed_modes:
+            raise ValueError(f"Invalid integration solver {mode}. Must be one of: {IntegrationSolvers.allowed_modes}")
+        self._int_mode = mode
+
     @property
     def activation_mode(self):
         return self._act_mode
+
+    def set_activation_mode(self, mode):
+        """
+        Setter for activation funtion type to use during evaluation.
+        """
+        if mode not in ActivationFunctions.allowed_modes:
+            raise ValueError(f"Invalid activation function {mode}. Must be one of: {ActivationFunctions.allowed_modes}")
+        self._act_mode = mode
 
     @staticmethod
     def _ds_dt(s, tau, inpt):
@@ -105,34 +122,10 @@ class CTRNN:
         return self.state_vector
 
     def _init_activation_function(self):
-        activation_mode = self.activation_mode.lower()
-        if activation_mode == 'relu' or activation_mode == 'rectified linear unit':
-            from activation_functions import relu
-            self.activation_function = relu
-        elif activation_mode == 'sigmoid':
-            from activation_functions import sigmoid
-            self.activation_function = sigmoid
-        elif activation_mode == 'softplus':
-            from activation_functions import softplus
-            self.activation_function = softplus
-        elif activation_mode == 'linear' or activation_mode is None:
-            from activation_functions import linear
-            self.activation_function = linear
-        elif activation_mode == 'tanh' or activation_mode == 'hyperbolic tangent':
-            from activation_functions import tanh
-            self.activation_function = tanh
-        else:
-            raise ValueError('Invalid Activation Function: ' + str(self.activation_mode))
+        self.activation_function = ActivationFunctions.get(self.activation_mode)
 
     def _init_solver(self):
-        if self.integration_mode == 'RK4':
-            from solvers import runge_kutta_step as rungekutta
-            self._step_solver = rungekutta
-        elif self.integration_mode == 'Euler':
-            from solvers import euler_step as euler
-            self._step_solver = euler
-        else:
-            raise ValueError('Invalid Solver: ' + str(self.integration_mode))
+        self._step_solver = IntegrationSolvers.get(self.integration_mode)
 
     def _enforce_parameter_constraints(self):
         assert self.n_in >= 0, 'Number of inputs must be 0 or greater'
