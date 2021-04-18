@@ -22,8 +22,8 @@ def euler_step(f, y0, dt, t=0):
     :param t: Time at which to start IVP (for time dependant inputs/functions). Defaults to 0.
     :return: y(t+dt) the next value of y.
     """
-    y0 = np.array(np.atleast_1d(y0))
-    return y0 + dt*np.atleast_1d(f(t, y0))
+    y = np.array(np.atleast_1d(y0))
+    return y + dt*np.atleast_1d(f(t, y))
 
 
 def runge_kutta_step(f, y0, dt, t=0):
@@ -38,10 +38,10 @@ def runge_kutta_step(f, y0, dt, t=0):
     :param t: Time at which to start IVP (for time dependant inputs/functions). Defaults to 0.
     :return: y(t+dt) the next value of y.
     """
-    y0 = np.array(np.atleast_1d(y0))
-    k1 = np.atleast_1d(f(t, y0))
-    k2 = np.atleast_1d(f(t + dt/2.0, y0 + k1 * dt / 2.))
-    k3 = np.atleast_1d(f(t + dt/2.0, y0 + k2 * dt / 2.))
-    k4 = np.atleast_1d(f(t + dt, y0 + k3 * dt))
+    y = np.array(np.atleast_1d(y0))
+    k1 = np.atleast_1d(f(t, y))
+    k2 = np.atleast_1d(f(t + dt/2.0, y + k1 * dt / 2.))
+    k3 = np.atleast_1d(f(t + dt/2.0, y + k2 * dt / 2.))
+    k4 = np.atleast_1d(f(t + dt, y + k3 * dt))
 
-    return y0 + dt*(1./6.)*(k1+2.*k2+2.*k3+k4)
+    return y + dt*(1./6.)*(k1+2.*k2+2.*k3+k4)
