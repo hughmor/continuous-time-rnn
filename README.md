@@ -8,7 +8,7 @@ The equations are solved as an initial value problem using numerical integration
 Many common ML activation functions are implemented, and you can also define custom activation functions.
 
 # Example
-A CTRNN instance can be created from a parameter dictionary.
+A CTRNN instance can be created from a parameter dictionary. This example shows a 24 neuron network being simulated with a random weight matrix. This network has 3 inputs (which I have made arbitrary periodic functions), where the diagonal input weight matrix indicates one input per neuron. It uses ReLU activation functions and fourth-order Runge Kutta for integration.
 
 ```
 import numpy as np
