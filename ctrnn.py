@@ -29,7 +29,7 @@ class CTRNN:
         self.dt_solver = kwargs.get('time step', 1.0e-6)
 
         # Integration
-        self.step_solver = None
+        self._step_solver = None
         self.integration_mode = kwargs.get('integration mode', 'RK4')
         self._init_solver()
         
@@ -38,10 +38,7 @@ class CTRNN:
         self.activation_mode = kwargs.get('activation', None)
         self._init_activation_function()
 
-        # Delay line
-        self.delay_line = deque() # TODO: I'm not sure I like this implementation... probably will gut this (is this even working right now?)
-        self.delay_time = kwargs.get('delay iterations', 2) * self.dt_solver
-
+        # Throw parameter errors
         self._enforce_parameter_constraints()
 
     def reset(self):
@@ -55,21 +52,18 @@ class CTRNN:
             x = x.transpose()
         self.input_sequence = x
         self.output_sequence = np.zeros(shape=(self.n_out, self.input_sequence.shape[1]))
-        self.take_from_delay_line = False
         for i in range(self.input_sequence.shape[1]): # TODO: right now evaluation time is based on input length... change to time parameter as input
-            if not self.take_from_delay_line and self.t_seconds >= self.delay_time:
-                self.take_from_delay_line = True
             self.step()
             self.output_sequence[:,i] = self.state_vector[-self.n_out:]
         
     def step(self):
-        self.delay_line.append(self.activation_function(self.state_vector + self.bias_vector))
-        self.neuron_inputs = self.calc_in_vector()
-        self.state_vector = self.step_solver(self.ds_dt, self.state_vector, self.dt_solver, t=self.t_seconds)
+        self._neuron_inputs = self._get_in_vector() # Input comes from recurrent units plus the external input
+        self.state_vector = self._step_solver(self.ds_dt, self.state_vector, self.dt_solver, t=self.t_seconds) # Integrate system with chosen IVP solver
+        self.state_vector = self.activation_function(self.state_vector + self.bias_vector) # Apply activation function (offset by bias)
         self.t_seconds += self.dt_solver
         
-    def calc_in_vector(self):
-        neuron_in = np.dot(self.weight_matrix, self.delay_line.popleft()) if self.take_from_delay_line else np.zeros_like(self.state_vector)
+    def _get_in_vector(self):
+        neuron_in = np.dot(self.weight_matrix, self.state_vector)
         if self.input_sequence is not None:
             i = int(self.t_seconds/self.dt_solver)-1
             inp = np.dot(self.input_weights, self.input_sequence[:,i])
@@ -78,7 +72,7 @@ class CTRNN:
 
     def ds_dt(self, t, s):
         decay = -s/self.decay_constant
-        weighted_update = self.neuron_inputs
+        weighted_update = self._neuron_inputs
         update = decay + weighted_update
         return update
 
@@ -105,12 +99,14 @@ class CTRNN:
     def _init_solver(self):
         if self.integration_mode == 'RK4':
             from solvers import runge_kutta_step as rungekutta
-            self.step_solver = rungekutta
+            self._step_solver = rungekutta
         elif self.integration_mode == 'Euler':
             from solvers import euler_step as euler
-            self.step_solver = euler
+            self._step_solver = euler
         else:
             raise ValueError('Invalid Solver: ' + str(self.integration_mode))
 
     def _enforce_parameter_constraints(self):
+        assert self.n_in >= 0, 'Number of inputs must be 0 or greater'
+        assert self.n_out >= 0, 'Number of outputs must be 0 or greater'
         assert self.n_in + self.n_out <= 2*self.size
