@@ -23,12 +23,12 @@ class CTRNN:
         # Integration
         self.t_seconds = 0.0
         self._step_solver = None
-        self.integration_mode = kwargs.get('integration mode', 'RK4')
+        self._int_mode = kwargs.get('integration mode', 'RK4')
         self._init_solver()
         
         # Activation functions
         self.activation_function = None
-        self.activation_mode = kwargs.get('activation', None)
+        self._act_mode = kwargs.get('activation', None)
         self._init_activation_function()
 
         # Initialize vectors
@@ -38,6 +38,14 @@ class CTRNN:
 
         # Throw parameter errors
         self._enforce_parameter_constraints()
+
+    @property
+    def integration_mode(self):
+        return self._int_mode
+
+    @property
+    def activation_mode(self):
+        return self._act_mode
 
     @staticmethod
     def _ds_dt(s, tau, inpt):
