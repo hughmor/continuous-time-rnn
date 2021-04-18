@@ -15,7 +15,7 @@ class CTRNN:
         self.n_in = kwargs.get('number of inputs', 1)
         self.n_out = kwargs.get('number of outputs', 1)
         self.decay_constant = kwargs.get('decay constant', 1.0e-3) #TODO: Allow for array of taus (one for each neuron)
-        if kwargs.get('randomize weights', True): #TODO: Allow for matrices to be provided
+        if kwargs.get('randomize weights', False): #TODO: Allow for matrices to be provided
             self.weight_matrix = np.random.random(size=(self.size, self.size))
             self.input_weights = np.random.random(size=(self.n_in, self.n_in))
         else:
