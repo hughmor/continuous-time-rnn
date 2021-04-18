@@ -1,7 +1,8 @@
 import numpy as np
 from solvers import IntegrationSolvers
 from activation_functions import ActivationFunctions
-from typing import Union
+from typing import Union, Callable
+
 
 class CTRNN:
     """
@@ -43,7 +44,7 @@ class CTRNN:
         """Return the name of the currently activated numerical solver."""
         return self._int_mode
 
-    def set_integration_mode(self, mode: str):
+    def set_integration_mode(self, mode:str):
         """
         Setter for integration method to use during simulation.
 
@@ -59,7 +60,34 @@ class CTRNN:
         """Return the name of the current activation functions of the neurons."""
         return self._act_mode
 
-    def set_activation_mode(self, mode: str):
+    def set_activation_function(self, func:Callable[[Union[float, list, np.ndarray]], np.ndarray], name:str = ''):
+        """
+        Register your own neuron activation function.
+
+        :param func: Custom function taking a single parameter and returning a numpy array of the length of the input.
+        :param name: Name of your custom function.
+        """
+        if name == '':
+            name = 'unnamed'
+        if name in ActivationFunctions.allowed_modes:
+            while name in ActivationFunctions.allowed_modes:
+                if '_' in name:
+                    split = name.split('_')
+                    idx = split[-1]
+                    try:
+                        idx = int(idx) + 1
+                        del split[-1]
+                    except ValueError:
+                        # this means the user included underscores in the name
+                        idx = 1
+                else:
+                    idx = 1
+                name = '_'.join(*split, f'{idx}')
+            print(f"Name {name} was already used.")
+        ActivationFunctions.register(func, name)
+        self.set_activation_mode(name)
+
+    def set_activation_mode(self, mode:str):
         """
         Setter for activation funtion type to use during evaluation.
 
@@ -71,7 +99,7 @@ class CTRNN:
         self._init_activation_function()
 
     @staticmethod
-    def _ds_dt(s: Union[float, np.ndarray], tau: Union[float, np.ndarray], inpt: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    def _ds_dt(s:Union[float, np.ndarray], tau:Union[float, np.ndarray], inpt:Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         """
         Static Definition of the CTRNN equation. All values can be defined as scalars or as numpy arrays with length equal to the dimensionality of the system.
         
@@ -81,7 +109,7 @@ class CTRNN:
         """
         return inpt - s / tau
 
-    def ds_dt(self, t: float, s: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    def ds_dt(self, t:float, s:Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         """
         Evaluates the differential equation decribing the system with state s at time t using the parameters of the CTRNN instance.
         (This method is here to expose a function of the correct signature to the integration method)
@@ -96,7 +124,7 @@ class CTRNN:
         self.state_vector = np.zeros_like(self.state_vector)
         self.t_seconds = 0.0
 
-    def simulate(self, x: Union[list, np.ndarray], dt: float) -> np.ndarray:
+    def simulate(self, x:Union[list, np.ndarray], dt:float) -> np.ndarray:
         """
         Run the simulation over a given input vector with defined timestep between input samples. Returns the output vector over the time spanned by the input vector.
 
@@ -113,7 +141,7 @@ class CTRNN:
         
         return self.output_sequence
 
-    def advance(self, inputs: Union[float, list, np.ndarray], evolution_time: float, dt: float) -> np.ndarray:
+    def advance(self, inputs:Union[float, list, np.ndarray], evolution_time:float, dt:float) -> np.ndarray:
         """
         Advance the simulation by a given amount of time with a constant input over this time (weight inputs, integrate system of equations, and apply activation function).
 

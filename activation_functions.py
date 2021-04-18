@@ -186,3 +186,9 @@ class ActivationFunctions:
     @classmethod
     def get(cls, mode):
         return cls.functions[mode.lower()]
+
+    @classmethod
+    def register(cls, func, name):
+        cls.functions[name] = func #TODO: must check that the function matches the required signature and output type
+        cls.allowed_modes.append(name)
+        print(f'Registered custom function with name {name}.')
