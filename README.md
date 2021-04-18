@@ -14,22 +14,23 @@ A CTRNN instance can be created from a parameter dictionary.
 import numpy as np
 from ctrnn import CTRNN
 
-n_in = 24
+n_neurons = 24
+n_in = 3
 params = {
-    'number of neurons': n_in,
-    'number of inputs': 4,
-    'number of outputs': n_in,
+    'number of neurons': n_neurons,
+    'number of inputs': n_in,
+    'number of outputs': n_neurons,
     'decay constant': 0.01,
-    'weight matrix': np.random.random(size=(n_in,n_in)),
+    'weight matrix': np.random.random(size=(n_neurons,n_neurons)),
     'input weights': np.array([
         [1.,0.,0.],
         [0.,2.,0.],
         [0.,0.,3.]
-    ])
+    ]),
     'integration mode': 'RK4',
     'activation': 'ReLU',
-    'initial state': np.ones(shape=n_in),
-    'biases': np.zeros(shape=n_in),
+    'initial state': np.ones(shape=n_neurons),
+    'biases': np.zeros(shape=n_neurons),
 }
 
 nn = CTRNN(**params)
@@ -45,4 +46,4 @@ inputs = [input1, input2, input3]
 dt = sim_time_seconds / N
 nn.simulate(inputs, dt)
 
-```        
+```
