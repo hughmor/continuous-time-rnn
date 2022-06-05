@@ -2,27 +2,37 @@ import numpy as np
 from collections import deque
 
 
-class CTRNN:
+class CTRNN_Layer:
     """
         Simulator for a continuous-time recurrent neural network (CTRNN). This class contains the parameters of the network and simulation,
         and has functionality to perform numerical integration of the network's differential equation.
     """
-    def __init__(self, **kwargs):
-        # Neuron states
-        self.size = kwargs.get('number of neurons', 1)
-        self.n_in = kwargs.get('number of inputs', 1)
-        self.n_out = kwargs.get('number of outputs', 1)
-        self.state_vector = kwargs.get('initial state', np.zeros(shape=self.size))
-        self.bias_vector = kwargs.get('biases', np.zeros(shape=self.size))
+    def __init__(self, size, n_in=None, n_out=None, initial_state=None, bias=0.0, gain=1.0, tau=1.0, weights_rec=None, weights_in=None, **kwargs):
+        self.size = size
+        self.n_in = n_in
+        self.n_out = n_in
+        if n_in is None:
+            self.n_in = size
+        if n_out is None:
+            self.n_out = size
+        self.bias_vector = bias * np.ones(shape=self.size)
+        self.gain_vector = gain * np.ones(shape=self.size)
+        self.tau_vector = tau * np.ones(shape=self.size)
+        self.state_vector = self.bias_vector.copy()
+        if initial_state is not None:
+            self.state_vector = initial_state
         
-        # Network parameters
-        self.decay_constant = kwargs.get('decay constant', 1.0e-3) #TODO: Allow for array of taus (one for each neuron)
-        if kwargs.get('randomize weights', True): #TODO: Allow for matrices to be provided
-            self.weight_matrix = np.random.random(size=(self.size, self.size))
-            self.input_weights = np.random.random(size=(self.n_in, self.n_in))
-        else:
-            self.weight_matrix = kwargs.get('weight matrix', np.ones(shape=(self.size, self.size)))
-            self.input_weights = kwargs.get('input weights', np.ones(shape=(self.n_in, self.n_in)))
+        self.weight_matrix = np.random.random(size=(self.size, self.size))
+        self.input_weights = np.random.random(size=(self.size, self.n_in))
+        if weights_rec is not None:
+            if weights_rec.shape != (self.size, self.size):
+                raise ValueError('Recurrent weights have incorrect shape: ' + str(weights_rec.shape))
+            self.weight_matrix = weights_rec
+        if weights_in is not None:
+            if weights_in.shape != (self.size, self.n_in):
+                raise ValueError('Input weights have incorrect shape: ' + str(weights_in.shape))
+            self.input_weights = weights_in
+
 
         # Simulator time
         self.t_seconds = 0.0
@@ -37,6 +47,9 @@ class CTRNN:
         self.activation_function = None
         self.activation_mode = kwargs.get('activation', None)
         self._init_activation_function()
+
+        self.output_vector = self.activation_function(self.state_vector)
+        self.input_sequence = None
 
         # Throw parameter errors
         self._enforce_parameter_constraints()
@@ -59,25 +72,26 @@ class CTRNN:
     def step(self):
         self._neuron_inputs = self._get_in_vector() # Input comes from recurrent units plus the external input
         self.state_vector = self._step_solver(self.ds_dt, self.state_vector, self.dt_solver, t=self.t_seconds) # Integrate system with chosen IVP solver
-        self.state_vector = self.activation_function(self.state_vector + self.bias_vector) # Apply activation function (offset by bias)
+        self.output_vector = self.activation_function(self.gain_vector * self.state_vector + self.bias_vector) # Apply activation function (offset by bias)
         self.t_seconds += self.dt_solver
         
     def _get_in_vector(self):
-        neuron_in = np.dot(self.weight_matrix, self.state_vector)
+        neuron_in = np.dot(self.weight_matrix, self.output_vector)
         if self.input_sequence is not None:
+            raise NotImplementedError('Input sequence not implemented yet. Shouldnt get here...')
             i = int(self.t_seconds/self.dt_solver)-1
             inp = np.dot(self.input_weights, self.input_sequence[:,i])
             neuron_in[:len(inp)] += inp
         return neuron_in
 
     def ds_dt(self, t, s):
-        decay = -s/self.decay_constant
+        decay = -s
         weighted_update = self._neuron_inputs
         update = decay + weighted_update
-        return update
+        return update/self.decay_constant
 
     def _init_activation_function(self):
-        activation_mode = self.activation_mode.lower()
+        activation_mode = self.activation_mode # .lower() TODO: PUT THIS BACK LATER
         if activation_mode == 'relu' or activation_mode == 'rectified linear unit':
             from activation_functions import relu
             self.activation_function = relu
@@ -93,6 +107,15 @@ class CTRNN:
         elif activation_mode == 'tanh' or activation_mode == 'hyperbolic tangent':
             from activation_functions import tanh
             self.activation_function = tanh
+        elif type(activation_mode == list): #TODO: inspect function to check number of params or names (use kwargs?)
+            if activation_mode[0].lower() == 'lorentzian':
+                from activation_functions import lorentzian
+                self.activation_parameters = activation_mode[1:]
+                self.activation_function = lambda x: lorentzian(x, *self.activation_parameters)
+            elif activation_mode[0].lower() == 'sin' or activation_mode[0].lower() == 'sinusoidal':
+                from activation_functions import sin
+                self.activation_parameters = activation_mode[1:]
+                self.activation_function = lambda x: sin(x, *self.activation_parameters)
         else:
             raise ValueError('Invalid Activation Function: ' + str(self.activation_mode))
 

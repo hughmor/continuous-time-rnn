@@ -66,6 +66,18 @@ def sigmoid(x):
     return 1/(1+np.exp(-1*x))
 
 
+def lorentzian(x, x0=0, width=1):
+    """
+    Lorentzian Lineshape Function.
+
+    :param x: input vector
+    :return: output of 1/(1+x^2)
+    """
+    x = np.atleast_1d(x)
+    x = 2 * (x - x0) / width
+    return 1-1/(1 + x*x)
+
+
 def tanh(x):
     """
     Hyperbolic Tangent Function.
@@ -77,7 +89,7 @@ def tanh(x):
     return np.tanh(x)
 
 
-def sin(x):
+def sin(x, phi, frq):
     """
     Sinusoidal Function.
 
@@ -85,7 +97,7 @@ def sin(x):
     :return: output of sin(x)
     """
     x = np.atleast_1d(x)
-    return np.sin(x)
+    return 0.5 * (np.sin(frq*(x+phi)) + 1)
 
 
 def clamp(x):
