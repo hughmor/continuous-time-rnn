@@ -1,8 +1,17 @@
-venv
-__pycache__
+# MacOS files
 .DS_Store
-.idea
+
+# IDE and Python files
+__pycache__/
 .ipynb_checkpoints/
+.idea/
 .vscode/
+*.code-workspace
+
+# virtual environment
+venv
+
+# project specific
 testing.ipynb
-dev
+dev/
+old-sim-attempts/
