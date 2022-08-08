@@ -11,60 +11,70 @@
 import numpy as np
 
 
-def linear(x):
+def linear(x, a=1, x0=0):
     """
     Linear Unit Function.
 
     :param x: input vector
-    :return: output of x
+    :param a: linear slope
+    :param x0: bias position (y(x0)=0)
+    :return: output of a*(x-x0)
     """
-    x = np.atleast_1d(x)
-    return x
+    x = np.atleast_1d(x) - x0
+    return a * x
 
 
-def relu(x):
+def relu(x, a=1, x0=0):
     """
     Rectified Linear Unit Function.
 
     :param x: input vector
-    :return: output of max(0,x)
+    :param a: linear slope
+    :param x0: center position (bias)
+    :return: output of a*max(0,x-x0)
     """
-    x = np.atleast_1d(x)
-    return np.maximum(np.zeros_like(x), x)
+    x = np.atleast_1d(x) - x0
+    return a * np.maximum(np.zeros_like(x), x)
 
 
-def elu(x):
+def elu(x, a=1, x0=0):
     """
     Exponential Linear Unit Function.
 
     :param x: input vector
-    :return: output of min(max(0,x),exp(x)-1)
+    :param a: linear slope
+    :param x0: center position (bias)
+    :return: output of a*min(max(0,x-x0),exp(x-x0)-1)
     """
-    x = np.atleast_1d(x)
-    return np.minimum(np.maximum(np.zeros_like(x), x), np.exp(x) - 1)
+    x = np.atleast_1d(x) - x0
+    return a * np.minimum(np.maximum(np.zeros_like(x), x), np.exp(x) - 1)
 
 
-def softplus(x):
+def softplus(x, a=1, x0=0):
     """
     Softplus Function.
 
     :param x: input vector
-    :return: output of log(1+exp(x))
+    :param a: gain
+    :param x0: center position (bias)
+    :return: output of a*log(1+exp(x-x0))
     """
-    x = np.atleast_1d(x)
-    return np.log(1+np.exp(x))
+    x = np.atleast_1d(x) - x0
+    return a * np.log(1+np.exp(x))
 
 
-def sigmoid(x):
+def sigmoid(x, a=1, b=1, x0=0):
     """
     Sigmoid Function.
 
     :param x: input vector
-    :return: output of 1/(1+exp(-x))
+    :param a: gain
+    :param b: rate
+    :param x0: center position (bias)
+    :return: output of a/(1+exp(-b*(x-x0)))
     """
-    x = np.atleast_1d(x)
-    return 1/(1+np.exp(-1*x))
-
+    x = np.atleast_1d(x) - x0
+    return a / (1+np.exp(-b*x))
 
 def lorentzian(x, x0=0, width=1):
     """
@@ -78,18 +88,20 @@ def lorentzian(x, x0=0, width=1):
     return 1-1/(1 + x*x)
 
 
-def tanh(x):
+def tanh(x, a=1, b=1, x0=0):
     """
     Hyperbolic Tangent Function.
 
     :param x: input vector
-    :return: output of tanh(x)
+    :param a: gain
+    :param b: rate
+    :param x0: center position (bias)
+    :return: output of a*tanh(b(x-x0))
     """
-    x = np.atleast_1d(x)
-    return np.tanh(x)
+    x = np.atleast_1d(x) - x0
+    return a * np.tanh(b*x)
 
-
-def sin(x, phi, frq):
+def sin_sq(x, phi, frq):
     """
     Sinusoidal Function.
 
@@ -99,6 +111,20 @@ def sin(x, phi, frq):
     x = np.atleast_1d(x)
     return 0.5 * (np.sin(frq*(x+phi)) + 1)
 
+def sin(x, a=1, k=1, x0=0):
+    """
+    Sinusoidal Function.
+
+    :param x: input vector
+    :param a: gain
+    :param k: frequency
+    :param x0: bias
+    :return: output of a*sin(k*(x-x0))
+    """
+    x = np.atleast_1d(x) - x0
+    return a*np.sin(k*x)
+
+# TODO: continue parameters from here onward
 
 def clamp(x):
     """
